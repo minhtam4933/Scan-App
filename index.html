@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>SCAN DOC</title>
+<style>
+:root{--ac:#1d4ed8;--ac2:#3b82f6;--bg:#f3f5fa;--card:#fff;--tx:#0f172a;--mut:#64748b;--line:#e2e8f0;--ok:#16a34a;--red:#dc2626;--r:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+body{-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+img{-webkit-user-drag:none;-webkit-touch-callout:none}
+[hidden]{display:none!important}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.dark{background:#000;color:#fff}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 18px calc(24px + env(safe-area-inset-bottom))}
+/* header */
+.hdr{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 14px 12px;background:var(--bg)}
+.hdr h2{font-size:19px;margin:0;flex:1;font-weight:700}
+.hdr small{display:block;font-size:12px;color:var(--mut);font-weight:500}
+.ib{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px}
+.ib:active{background:rgba(0,0,0,.08)}
+/* home */
+.brand{text-align:center;padding:calc(34px + env(safe-area-inset-top)) 0 22px}
+.brand .logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--ac),var(--ac2));display:grid;place-items:center;margin:0 auto 12px;box-shadow:0 8px 24px rgba(29,78,216,.35)}
+.brand h1{margin:0;font-size:26px;letter-spacing:1.5px;font-weight:800}
+.brand p{margin:4px 0 0;color:var(--mut)}
+.card{display:flex;align-items:center;gap:16px;width:100%;text-align:left;background:var(--card);border-radius:var(--r);padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.04)}
+.card:active{transform:scale(.985)}
+.card .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;background:#eef2ff;flex:none}
+.card b{display:block;font-size:16.5px;letter-spacing:.3px}
+.card span{display:block;color:var(--mut);font-size:13.5px;margin-top:2px}
+.card.hero{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;padding:26px 20px}
+.card.hero .ic{background:rgba(255,255,255,.2);width:56px;height:56px;font-size:28px}
+.card.hero b{font-size:19px}.card.hero span{color:rgba(255,255,255,.85)}
+.sec{font-size:14px;font-weight:700;color:var(--mut);margin:22px 4px 10px;text-transform:uppercase;letter-spacing:.6px}
+.banner{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.banner .row{display:flex;gap:8px;margin-top:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;padding:13px 18px;font-weight:700;font-size:15px;background:#e2e8f0}
+.btn.pri{background:var(--ac);color:#fff}
+.btn.ok{background:var(--ok);color:#fff}
+.btn.red{background:#fee2e2;color:var(--red)}
+.btn.ghost{background:transparent;border:1.5px solid var(--line)}
+.btn.sm{padding:9px 14px;font-size:14px;border-radius:11px}
+.btn.big{width:100%;padding:18px;font-size:17px;border-radius:16px;letter-spacing:.4px}
+.btn:active{filter:brightness(.92)}
+.btn:disabled{opacity:.45}
+.doc{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;padding:10px;margin-bottom:9px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.doc img{width:46px;height:62px;object-fit:cover;border-radius:6px;background:#e5e7eb;border:1px solid var(--line);flex:none}
+.doc .meta{flex:1;min-width:0}
+.doc .meta b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc .meta span{font-size:12.5px;color:var(--mut)}
+.empty{text-align:center;color:var(--mut);padding:26px 10px;font-size:14px}
+/* camera */
+#s-camera video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cam-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:linear-gradient(rgba(0,0,0,.55),transparent);z-index:3}
+.cam-top .grp{display:flex;gap:6px}
+.cb{height:42px;min-width:42px;padding:0 12px;border-radius:21px;background:rgba(0,0,0,.4);display:grid;place-items:center;font-size:18px;font-weight:700;color:#fff;backdrop-filter:blur(6px)}
+.cb.on{background:#facc15;color:#000}
+.cb.auto{font-size:13px;letter-spacing:.5px}
+.pill{position:absolute;left:50%;transform:translateX(-50%);top:calc(70px + env(safe-area-inset-top));background:rgba(0,0,0,.62);padding:9px 16px;border-radius:20px;font-size:14px;font-weight:600;white-space:nowrap;z-index:3;transition:background .2s}
+.pill.found{background:rgba(22,163,74,.9)}
+.cam-bottom{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-around;padding:18px 16px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.7));z-index:3}
+.shutter{width:78px;height:78px;border-radius:50%;background:conic-gradient(#22c55e var(--p,0deg),rgba(255,255,255,.35) 0);display:grid;place-items:center}
+.shutter::after{content:"";width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px #000 inset}
+.shutter:active::after{background:#d4d4d8}
+.side{width:58px;height:58px;border-radius:14px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:12px;font-weight:700;position:relative;overflow:hidden;color:#fff}
+.side img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.side .cnt{position:absolute;top:3px;right:3px;background:var(--ac2);border-radius:10px;min-width:20px;height:20px;font-size:12px;display:grid;place-items:center;padding:0 5px;z-index:1}
+.side .lbl{position:relative;z-index:1;text-shadow:0 1px 3px #000}
+#flashFx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5;transition:opacity .25s}
+.camerr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center;z-index:2}
+.camerr p{color:#cbd5e1;margin:0;line-height:1.5}
+/* review */
+.dtop{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 10px 8px}
+.dtop h3{flex:1;margin:0;font-size:16px;text-align:center}
+.dtop .ib{color:#fff}
+.stage{flex:1;position:relative;min-height:0;margin:0 12px}
+.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.spin{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35)}
+.spin::after{content:"";width:40px;height:40px;border-radius:50%;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tools{display:flex;justify-content:center;gap:10px;padding:12px 10px 4px}
+.tb{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:#e2e8f0;padding:6px 12px;border-radius:12px}
+.tb i{font-style:normal;font-size:21px}
+.tb:active{background:rgba(255,255,255,.12)}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:8px 12px;justify-content:center;flex-wrap:wrap}
+.chip{padding:8px 13px;border-radius:18px;background:rgba(255,255,255,.12);font-size:13.5px;font-weight:600;color:#e2e8f0;white-space:nowrap}
+.chip.on{background:#fff;color:#000}
+.chiplbl{font-size:11px;color:#94a3b8;text-align:center;letter-spacing:.6px;text-transform:uppercase;margin-top:2px}
+.dbar{display:flex;gap:10px;padding:10px 14px calc(14px + env(safe-area-inset-bottom))}
+.dbar .btn{flex:1;padding:15px 10px}
+.dbar .btn.dk{background:rgba(255,255,255,.14);color:#fff}
+/* crop */
+#cropStage{flex:1;position:relative;min-height:0;touch-action:none}
+#cropCanvas{position:absolute;inset:0;width:100%;height:100%}
+#loupe{position:absolute;width:120px;height:120px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;display:none;top:10px;left:10px}
+.hint{text-align:center;font-size:13px;color:#94a3b8;padding:6px}
+/* pages */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:6px 0 10px}
+.thumb{position:relative;aspect-ratio:210/297;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(15,23,42,.12);touch-action:pan-y}
+.thumb img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.thumb .no{position:absolute;left:6px;bottom:6px;background:rgba(15,23,42,.78);color:#fff;font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px}
+.thumb.drag{opacity:.3;outline:2px dashed var(--ac)}
+.dragghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-50%) scale(1.06);box-shadow:0 12px 30px rgba(0,0,0,.35);opacity:.95}
+.addtile{aspect-ratio:210/297;border:2px dashed #94a3b8;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut);font-size:13px;font-weight:600;gap:4px;text-align:center;padding:6px}
+.addtile i{font-style:normal;font-size:28px;color:var(--ac)}
+.foot{padding:12px 18px calc(14px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:9px}
+.foot .row{display:flex;gap:9px}.foot .row .btn{flex:1}
+/* sheet */
+.mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:40;display:none}
+.mask.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;z-index:41;padding:10px 14px calc(14px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .22s ease}
+.sheet.on{transform:none}
+.sheet h4{margin:6px 6px 10px;font-size:16px}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:#cbd5e1;margin:0 auto 6px}
+.act{display:flex;align-items:center;gap:14px;width:100%;padding:13px 10px;border-radius:12px;font-size:15.5px;text-align:left}
+.act i{font-style:normal;width:26px;text-align:center;font-size:19px}
+.act:active{background:#f1f5f9}
+.act.red{color:var(--red)}
+.acts2{display:grid;grid-template-columns:1fr 1fr}
+/* done */
+.done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.done .chk{width:84px;height:84px;border-radius:50%;background:#dcfce7;color:var(--ok);display:grid;place-items:center;font-size:44px;margin-bottom:16px}
+.done h2{margin:0 0 8px;font-size:22px}
+.fname{font-weight:700;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0 4px;word-break:break-all}
+.done .info{color:var(--mut);margin-bottom:24px}
+.done .btns{width:100%;display:flex;flex-direction:column;gap:11px;max-width:420px}
+.done .links{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+/* viewer */
+#s-viewer .stage{margin:0}
+.vnav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+.vnav .ib{color:#fff;font-size:26px;width:54px;height:54px;background:rgba(255,255,255,.12)}
+/* overlays */
+#busy{position:fixed;inset:0;z-index:90;background:rgba(15,23,42,.55);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;font-weight:600}
+#busy.on{display:flex}
+#busy::before{content:"";width:46px;height:46px;border-radius:50%;border:5px solid rgba(255,255,255,.25);border-top-color:#fff;animation:sp .8s linear infinite}
+#toast{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-20px);background:#0f172a;color:#fff;padding:11px 18px;border-radius:12px;font-size:14px;z-index:95;opacity:0;transition:.25s;pointer-events:none;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<section class="screen active" id="s-home">
+  <div class="scroll">
+    <div class="brand">
+      <div class="logo"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></div>
+      <h1>SCAN DOC</h1>
+      <p>Chụp và lưu tài liệu</p>
+    </div>
+    <div class="banner" id="resume" hidden>
+      <b>Bạn đang có tài liệu chưa hoàn tất</b> (<span id="resumeN">0</span> trang).
+      <div class="row"><button class="btn sm pri" id="btnResume">Tiếp tục</button><button class="btn sm ghost" id="btnDiscard">Bỏ tài liệu này</button></div>
+    </div>
+    <button class="card hero" id="btnScan"><div class="ic">📷</div><div><b>CHỤP TÀI LIỆU</b><span>Chụp nhiều trang</span></div></button>
+    <button class="card" id="btnLib"><div class="ic">📁</div><div><b>TÀI LIỆU ĐÃ LƯU</b><span>Xem, chia sẻ, xóa</span></div></button>
+    <button class="card" id="btnMakePdf"><div class="ic">📄</div><div><b>TẠO PDF</b><span>Gộp nhiều ảnh thành PDF</span></div></button>
+    <div class="sec">Tài liệu gần đây</div>
+    <div id="recent"></div>
+  </div>
+</section>
+
+<!-- ============ CAMERA ============ -->
+<section class="screen dark" id="s-camera">
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="overlay"></canvas>
+  <div class="cam-top">
+    <button class="cb" id="camClose" aria-label="Đóng">✕</button>
+    <div class="grp">
+      <button class="cb" id="camFlash" hidden aria-label="Flash">⚡</button>
+      <button class="cb" id="camSwitch" hidden aria-label="Đổi camera">🔄</button>
+      <button class="cb auto" id="camAuto">AUTO</button>
+    </div>
+  </div>
+  <div class="pill" id="camStatus">Đang mở camera…</div>
+  <div class="camerr" id="camErr" hidden>
+    <div style="font-size:46px">📷</div>
+    <p id="camErrMsg">Không mở được camera trực tiếp trên trình duyệt này.</p>
+    <button class="btn pri" id="camSys">Chụp bằng camera của máy</button>
+  </div>
+  <div class="cam-bottom">
+    <button class="side" id="camGallery"><span class="lbl">🖼️<br>Ảnh</span></button>
+    <button class="shutter" id="shutter" aria-label="Chụp"></button>
+    <button class="side" id="camDone"><span class="cnt" id="camCnt" hidden>0</span><span class="lbl" id="camDoneLbl">Xong</span></button>
+  </div>
+  <div id="flashFx"></div>
+</section>
+
+<!-- ============ REVIEW ============ -->
+<section class="screen dark" id="s-review">
+  <div class="dtop"><button class="ib" id="revBack">←</button><h3 id="revTitle">Xem lại</h3><span style="width:42px"></span></div>
+  <div class="stage"><img id="revImg" alt=""><div class="spin" id="revSpin"></div></div>
+  <div class="tools">
+    <button class="tb" id="revRotate"><i>⟳</i>Xoay</button>
+    <button class="tb" id="revCrop"><i>⛶</i>Chỉnh 4 góc</button>
+  </div>
+  <div class="chips" id="filterChips">
+    <button class="chip" data-f="original">Original</button>
+    <button class="chip" data-f="document">Document</button>
+    <button class="chip" data-f="bw">Black &amp; White</button>
+    <button class="chip" data-f="gray">Grayscale</button>
+  </div>
+  <div class="chips" id="ratioChips" style="padding-top:0">
+    <button class="chip" data-r="a4">A4</button>
+    <button class="chip" data-r="a5">A5</button>
+    <button class="chip" data-r="orig">Original</button>
+  </div>
+  <div class="dbar"><button class="btn dk" id="revRetake">Chụp lại</button><button class="btn ok" id="revUse">Dùng ảnh này</button></div>
+</section>
+
+<!-- ============ CROP ============ -->
+<section class="screen dark" id="s-crop">
+  <div class="dtop"><button class="ib" id="cropCancel">✕</button><h3>Chỉnh 4 góc</h3><span style="width:42px"></span></div>
+  <div id="cropStage"><canvas id="cropCanvas"></canvas><canvas id="loupe" width="240" height="240"></canvas></div>
+  <div class="hint">Kéo 4 điểm ● về đúng 4 góc tờ giấy</div>
+  <div class="chips"><button class="chip" id="cropAuto">✨ Tự nhận diện</button><button class="chip" id="cropFull">⬚ Toàn ảnh</button></div>
+  <div class="dbar"><button class="btn dk" id="cropCancel2">Hủy</button><button class="btn ok" id="cropOk">Xác nhận</button></div>
+</section>
+
+<!-- ============ PAGES ============ -->
+<section class="screen" id="s-pages">
+  <div class="hdr"><button class="ib" id="pagesBack">←</button><h2>Tài liệu mới<small id="pagesName"></small></h2></div>
+  <div class="scroll"><div class="grid" id="pageGrid"></div>
+    <div class="hint" style="color:var(--mut)">Chạm vào trang để xem / sửa · Giữ và kéo để đổi thứ tự</div></div>
+  <div class="foot">
+    <div class="row"><button class="btn pri" id="pagesNext">＋ Chụp trang tiếp theo</button></div>
+    <div class="row"><button class="btn ghost" id="pagesImport">🖼️ Thêm ảnh</button><button class="btn ghost" id="pagesJpg">💾 Lưu ảnh JPG</button></div>
+    <button class="btn big ok" id="pagesPdf">TẠO PDF</button>
+  </div>
+</section>
+
+<!-- ============ VIEWER ============ -->
+<section class="screen dark" id="s-viewer">
+  <div class="dtop"><button class="ib" id="viewBack">←</button><h3 id="viewTitle">Trang 1</h3><span style="width:42px"></span></div>
+  <div class="stage"><img id="viewImg" alt=""></div>
+  <div class="vnav"><button class="ib" id="viewPrev">‹</button><span id="viewCount"></span><button class="ib" id="viewNext">›</button></div>
+</section>
+
+<!-- ============ DONE ============ -->
+<section class="screen" id="s-done">
+  <div class="done">
+    <div class="chk">✓</div>
+    <h2>PDF đã tạo thành công</h2>
+    <div class="fname" id="doneName"></div>
+    <div class="info" id="doneInfo"></div>
+    <div class="btns">
+      <button class="btn big pri" id="doneSave">⬇ LƯU VÀO MÁY</button>
+      <button class="btn big ok" id="doneShare">↗ CHIA SẺ</button>
+    </div>
+    <div class="links">
+      <button class="btn sm ghost" id="doneJpg">💾 Lưu ảnh JPG</button>
+      <button class="btn sm ghost" id="doneNew">📷 Tài liệu mới</button>
+      <button class="btn sm ghost" id="doneHome">🏠 Trang chủ</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LIBRARY ============ -->
+<section class="screen" id="s-lib">
+  <div class="hdr"><button class="ib" id="libBack">←</button><h2>Tài liệu đã lưu</h2></div>
+  <div class="scroll" id="libList"></div>
+</section>
+
+<!-- ============ DOC DETAIL ============ -->
+<section class="screen" id="s-doc">
+  <div class="hdr"><button class="ib" id="docBack">←</button><h2 id="docName" style="font-size:16px;word-break:break-all"></h2></div>
+  <div class="scroll"><div class="hint" id="docInfo" style="color:var(--mut);text-align:left;padding:0 2px 6px"></div><div class="grid" id="docGrid"></div></div>
+  <div class="foot">
+    <div class="row"><button class="btn pri" id="docSave">⬇ Lưu PDF</button><button class="btn ok" id="docShare">↗ Chia sẻ PDF</button></div>
+    <div class="row"><button class="btn ghost" id="docJpg">💾 Lưu ảnh JPG</button><button class="btn red" id="docDel">🗑 Xóa</button></div>
+  </div>
+</section>
+
+<div class="mask" id="mask"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <h4 id="sheetTitle">Trang 1</h4>
+  <button class="act" data-a="view"><i>👁</i>Xem</button>
+  <button class="act" data-a="edit"><i>⛶</i>Chỉnh 4 góc &amp; bộ lọc</button>
+  <button class="act" data-a="rotate"><i>⟳</i>Xoay 90°</button>
+  <button class="act" data-a="retake"><i>📷</i>Chụp lại trang này</button>
+  <div class="acts2"><button class="act" data-a="left"><i>◀</i>Lên trước</button><button class="act" data-a="right"><i>▶</i>Ra sau</button></div>
+  <button class="act red" data-a="delete"><i>🗑</i>Xóa trang</button>
+</div>
+
+<input type="file" id="fileImport" accept="image/*" multiple hidden>
+<input type="file" id="fileCapture" accept="image/*" capture="environment" hidden>
+<div id="busy"><span id="busyMsg">Đang xử lý…</span></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/*CORE-START*/
+/* =====================================================================
+   XỬ LÝ ẢNH THUẦN JS (không thư viện ngoài) – chạy hoàn toàn trên máy
+   ===================================================================== */
+const A4K = 297 / 210, A5K = 210 / 148;
+
+function toGray(d, n) {
+  const g = new Uint8Array(n);
+  for (let i = 0, j = 0; i < n; i++, j += 4) g[i] = (d[j] * 77 + d[j + 1] * 150 + d[j + 2] * 29) >> 8;
+  return g;
+}
+function boxBlur(src, w, h, r) {
+  const tmp = new Uint8Array(w * h), out = new Uint8Array(w * h), dd = 2 * r + 1;
+  for (let y = 0; y < h; y++) {
+    const o = y * w; let s = 0;
+    for (let x = -r; x <= r; x++) s += src[o + Math.min(w - 1, Math.max(0, x))];
+    for (let x = 0; x < w; x++) {
+      tmp[o + x] = s / dd;
+      s += src[o + Math.min(w - 1, x + r + 1)] - src[o + Math.max(0, x - r)];
+    }
+  }
+  for (let x = 0; x < w; x++) {
+    let s = 0;
+    for (let y = -r; y <= r; y++) s += tmp[Math.min(h - 1, Math.max(0, y)) * w + x];
+    for (let y = 0; y < h; y++) {
+      out[y * w + x] = s / dd;
+      s += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x];
+    }
+  }
+  return out;
+}
+function morph(m, w, h, r, isMax) {
+  const t = new Uint8Array(w * h), o = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let v = isMax ? 0 : 1;
+    for (let k = -r; k <= r; k++) {
+      const xx = x + k; const p = (xx < 0 || xx >= w) ? (isMax ? 0 : 1) : m[y * w + xx];
+      if (isMax) v |= p; else v &= p;
+    }
+    t[y * w + x] = v;
+  }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let v = isMax ? 0 : 1;
+    for (let k = -r; k <= r; k++) {
+      const yy = y + k; const p = (yy < 0 || yy >= h) ? (isMax ? 0 : 1) : t[yy * w + x];
+      if (isMax) v |= p; else v &= p;
+    }
+    o[y * w + x] = v;
+  }
+  return o;
+}
+function otsu(g) {
+  const hist = new Float64Array(256);
+  for (let i = 0; i < g.length; i++) hist[g[i]]++;
+  const total = g.length; let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let sumB = 0, wB = 0, best = 0, th = 127;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t]; if (!wB) continue;
+    const wF = total - wB; if (!wF) break;
+    sumB += t * hist[t];
+    const mB = sumB / wB, mF = (sum - sumB) / wF, v = wB * wF * (mB - mF) * (mB - mF);
+    if (v > best) { best = v; th = t; }
+  }
+  return th;
+}
+function largestComponent(mask, w, h) {
+  const n = w * h, lab = new Int32Array(n), stack = new Int32Array(n);
+  let cur = 0, best = 0, bestId = 0;
+  for (let i = 0; i < n; i++) {
+    if (!mask[i] || lab[i]) continue;
+    cur++; let sp = 0, cnt = 0; stack[sp++] = i; lab[i] = cur;
+    while (sp) {
+      const p = stack[--sp]; cnt++;
+      const x = p % w;
+      if (x > 0 && mask[p - 1] && !lab[p - 1]) { lab[p - 1] = cur; stack[sp++] = p - 1; }
+      if (x < w - 1 && mask[p + 1] && !lab[p + 1]) { lab[p + 1] = cur; stack[sp++] = p + 1; }
+      if (p >= w && mask[p - w] && !lab[p - w]) { lab[p - w] = cur; stack[sp++] = p - w; }
+      if (p < n - w && mask[p + w] && !lab[p + w]) { lab[p + w] = cur; stack[sp++] = p + w; }
+    }
+    if (cnt > best) { best = cnt; bestId = cur; }
+  }
+  return { lab, id: bestId, count: best };
+}
+const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+function convexHull(pts) {
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (pts.length < 3) return pts;
+  const lo = [], up = [];
+  for (const p of pts) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  lo.pop(); up.pop(); return lo.concat(up);
+}
+function segDist(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy;
+  let t = L ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L : 0; t = Math.max(0, Math.min(1, t));
+  const x = a[0] + t * dx - p[0], y = a[1] + t * dy - p[1]; return Math.sqrt(x * x + y * y);
+}
+function dpSimplify(pts, eps) {
+  if (pts.length < 3) return pts.slice();
+  let dm = 0, idx = 0; const a = pts[0], b = pts[pts.length - 1];
+  for (let i = 1; i < pts.length - 1; i++) { const d = segDist(pts[i], a, b); if (d > dm) { dm = d; idx = i; } }
+  if (dm > eps) { const l = dpSimplify(pts.slice(0, idx + 1), eps), r = dpSimplify(pts.slice(idx), eps); return l.slice(0, -1).concat(r); }
+  return [a, b];
+}
+function simplifyClosed(h, eps) {
+  if (h.length <= 6) return h;
+  let far = 0, fd = 0;
+  for (let i = 1; i < h.length; i++) { const d = (h[i][0] - h[0][0]) ** 2 + (h[i][1] - h[0][1]) ** 2; if (d > fd) { fd = d; far = i; } }
+  const c1 = dpSimplify(h.slice(0, far + 1), eps), c2 = dpSimplify(h.slice(far).concat([h[0]]), eps);
+  return c1.slice(0, -1).concat(c2.slice(0, -1));
+}
+const triArea = (a, b, c) => Math.abs(cross(a, b, c)) / 2;
+function maxQuad(p) {
+  const n = p.length; if (n < 4) return null;
+  let best = -1, q = null;
+  for (let i = 0; i < n; i++) for (let k = i + 2; k < n; k++) {
+    let bj = -1, ba = -1, bl = -1, bb = -1;
+    for (let j = i + 1; j < k; j++) { const a = triArea(p[i], p[j], p[k]); if (a > ba) { ba = a; bj = j; } }
+    for (let l = k + 1; l < n + i; l++) { const L = l % n; const a = triArea(p[k], p[L], p[i]); if (a > bb) { bb = a; bl = L; } }
+    if (bj < 0 || bl < 0) continue;
+    if (ba + bb > best) { best = ba + bb; q = [p[i], p[bj], p[k], p[bl]]; }
+  }
+  return q;
+}
+function polyArea(q) { let s = 0; for (let i = 0; i < q.length; i++) { const a = q[i], b = q[(i + 1) % q.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s) / 2; }
+function orderCorners(q) {
+  const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;
+  const s = q.slice().sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
+  let k = 0, m = Infinity; s.forEach((p, i) => { if (p[0] + p[1] < m) { m = p[0] + p[1]; k = i; } });
+  return [0, 1, 2, 3].map(i => s[(k + i) % 4]); // TL, TR, BR, BL
+}
+function quadOfLabel(lab, id, w, h) {
+  const pts = []; let span = 0;
+  for (let y = 0; y < h; y++) {
+    let mn = -1, mx = -1; const o = y * w;
+    for (let x = 0; x < w; x++) if (lab[o + x] === id) { if (mn < 0) mn = x; mx = x; }
+    if (mn >= 0) { pts.push([mn, y], [mx + 1, y], [mn, y + 1], [mx + 1, y + 1]); span += mx - mn + 1; }
+  }
+  if (pts.length < 8) return null;
+  const hull = convexHull(pts);
+  let eps = Math.hypot(w, h) * 0.008, poly = simplifyClosed(hull, eps);
+  while (poly.length > 32) { eps *= 1.5; poly = simplifyClosed(hull, eps); }
+  const q = maxQuad(poly); if (!q) return null;
+  return { q: orderCorners(q), span };
+}
+function validQuad(r, w, h) {
+  if (!r) return 0;
+  const q = r.q, area = polyArea(q);
+  if (area < 0.12 * w * h || area > 0.985 * w * h) return 0;
+  const fill = r.span / area; if (fill < 0.82 || fill > 1.15) return 0;
+  let sign = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = q[(i + 3) % 4], b = q[i], c = q[(i + 1) % 4];
+    const cr = cross(a, b, c); const sg = Math.sign(cr);
+    if (!sg || (sign && sg !== sign)) return 0; sign = sg;
+    const v1 = [a[0] - b[0], a[1] - b[1]], v2 = [c[0] - b[0], c[1] - b[1]];
+    const ang = Math.acos(Math.max(-1, Math.min(1, (v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(...v1) * Math.hypot(...v2) || 1)))) * 180 / Math.PI;
+    if (ang < 35 || ang > 145) return 0;
+  }
+  return area * (1 - Math.abs(1 - fill));
+}
+/** Nhận diện tờ giấy. Trả về 4 góc chuẩn hoá [0..1] theo thứ tự TL,TR,BR,BL hoặc null */
+function detectQuad(data, w, h) {
+  const n = w * h;
+  const gray = toGray(data, n), g = boxBlur(gray, w, h, 2);
+  const cands = [];
+  // Cách 1: giấy sáng hơn nền (Otsu)
+  {
+    const t = otsu(g); let m = new Uint8Array(n);
+    for (let i = 0; i < n; i++) m[i] = g[i] > t ? 1 : 0;
+    m = morph(morph(m, w, h, 2, false), w, h, 2, true);
+    const c = largestComponent(m, w, h);
+    if (c.count > n * 0.08) { const r = quadOfLabel(c.lab, c.id, w, h); const s = validQuad(r, w, h); if (s) cands.push({ q: r.q, s }); }
+  }
+  // Cách 2: theo đường biên (Sobel) – dùng khi giấy và nền cùng sáng
+  {
+    const g = boxBlur(gray, w, h, 1); // làm mờ nhẹ để giữ viền mảnh
+    const mag = new Uint8Array(n), hist = new Uint32Array(256);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const gx = -g[i - w - 1] - 2 * g[i - 1] - g[i + w - 1] + g[i - w + 1] + 2 * g[i + 1] + g[i + w + 1];
+      const gy = -g[i - w - 1] - 2 * g[i - w] - g[i - w + 1] + g[i + w - 1] + 2 * g[i + w] + g[i + w + 1];
+      const v = Math.min(255, (Math.abs(gx) + Math.abs(gy)) >> 2); mag[i] = v; hist[v]++;
+    }
+    let acc = 0, th = 255; const lim = n * 0.85;
+    for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= lim) { th = v; break; } }
+    th = Math.max(8, Math.min(th, 22)); // ngưỡng thấp để bắt cả viền mờ (giấy trắng trên nền sáng)
+    let e = new Uint8Array(n); for (let i = 0; i < n; i++) e[i] = mag[i] > th ? 1 : 0;
+    e = morph(e, w, h, 1, true);
+    const bg = new Uint8Array(n), st = new Int32Array(n); let sp = 0;
+    const seed = i => { if (!e[i] && !bg[i]) { bg[i] = 1; st[sp++] = i; } };
+    for (let x = 0; x < w; x++) { seed(x); seed((h - 1) * w + x); }
+    for (let y = 0; y < h; y++) { seed(y * w); seed(y * w + w - 1); }
+    while (sp) {
+      const p = st[--sp], x = p % w;
+      if (x > 0) seed(p - 1); if (x < w - 1) seed(p + 1); if (p >= w) seed(p - w); if (p < n - w) seed(p + w);
+    }
+    // vùng không nối với mép ảnh = tờ giấy (gồm cả chữ bên trong); co lại bù độ dày đường biên
+    let inner = new Uint8Array(n); for (let i = 0; i < n; i++) inner[i] = bg[i] ? 0 : 1;
+    inner = morph(inner, w, h, 2, false);
+    const c = largestComponent(inner, w, h);
+    if (c.count > n * 0.08) { const r = quadOfLabel(c.lab, c.id, w, h); const s = validQuad(r, w, h); if (s) cands.push({ q: r.q, s }); }
+  }
+  if (!cands.length) return null;
+  cands.sort((a, b) => b.s - a.s);
+  // thu nhỏ 0,4% về tâm để không dính viền nền
+  const q0 = cands[0].q, cx = q0.reduce((s, p) => s + p[0], 0) / 4, cy = q0.reduce((s, p) => s + p[1], 0) / 4;
+  return q0.map(([x, y]) => [x + (cx - x) * 0.008, y + (cy - y) * 0.008]).map(([x, y]) => [Math.min(1, Math.max(0, x / w)), Math.min(1, Math.max(0, y / h))]);
+}
+
+/* ---------- Chỉnh phối cảnh (homography + nội suy song tuyến) ---------- */
+function solve(A, b) {
+  const n = b.length;
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]]; [b[c], b[p]] = [b[p], b[c]];
+    for (let r = c + 1; r < n; r++) { const f = A[r][c] / A[c][c]; for (let k = c; k < n; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+  }
+  const x = new Array(n);
+  for (let r = n - 1; r >= 0; r--) { let s = b[r]; for (let k = r + 1; k < n; k++) s -= A[r][k] * x[k]; x[r] = s / A[r][r]; }
+  return x;
+}
+function homography(from, to) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = from[i], [X, Y] = to[i];
+    A.push([x, y, 1, 0, 0, 0, -x * X, -y * X]); b.push(X);
+    A.push([0, 0, 0, x, y, 1, -x * Y, -y * Y]); b.push(Y);
+  }
+  return solve(A, b);
+}
+function outDims(corners, sw, sh, ratio) {
+  const P = corners.map(([x, y]) => [x * sw, y * sh]);
+  const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const aw = (d(P[0], P[1]) + d(P[3], P[2])) / 2, ah = (d(P[0], P[3]) + d(P[1], P[2])) / 2;
+  const L = Math.round(Math.min(2200, Math.max(1100, Math.max(aw, ah))));
+  if (ratio === 'orig') {
+    const k = aw / Math.max(1, ah);
+    return k >= 1 ? { w: L, h: Math.max(16, Math.round(L / k)) } : { w: Math.max(16, Math.round(L * k)), h: L };
+  }
+  const k = ratio === 'a5' ? A5K : A4K;
+  return aw > ah ? { w: L, h: Math.round(L / k) } : { w: Math.round(L / k), h: L };
+}
+/** src: {data,width,height}; trả về {data,width,height} */
+function warp(src, corners, W, H) {
+  const sw = src.width, sh = src.height, s = src.data;
+  const P = corners.map(([x, y]) => [x * sw, y * sh]);
+  const m = homography([[0, 0], [W, 0], [W, H], [0, H]], P);
+  const out = new Uint8ClampedArray(W * H * 4);
+  const mxX = sw - 1.001, mxY = sh - 1.001;
+  let o = 0;
+  for (let y = 0; y < H; y++) {
+    const yy = y + 0.5;
+    for (let x = 0; x < W; x++, o += 4) {
+      const xx = x + 0.5, den = m[6] * xx + m[7] * yy + 1;
+      let fx = (m[0] * xx + m[1] * yy + m[2]) / den - 0.5, fy = (m[3] * xx + m[4] * yy + m[5]) / den - 0.5;
+      fx = fx < 0 ? 0 : fx > mxX ? mxX : fx; fy = fy < 0 ? 0 : fy > mxY ? mxY : fy;
+      const x0 = fx | 0, y0 = fy | 0, ax = fx - x0, ay = fy - y0;
+      const i00 = (y0 * sw + x0) * 4, i10 = i00 + 4, i01 = i00 + sw * 4, i11 = i01 + 4;
+      const w00 = (1 - ax) * (1 - ay), w10 = ax * (1 - ay), w01 = (1 - ax) * ay, w11 = ax * ay;
+      out[o] = s[i00] * w00 + s[i10] * w10 + s[i01] * w01 + s[i11] * w11;
+      out[o + 1] = s[i00 + 1] * w00 + s[i10 + 1] * w10 + s[i01 + 1] * w01 + s[i11 + 1] * w11;
+      out[o + 2] = s[i00 + 2] * w00 + s[i10 + 2] * w10 + s[i01 + 2] * w01 + s[i11 + 2] * w11;
+      out[o + 3] = 255;
+    }
+  }
+  return { data: out, width: W, height: H };
+}
+
+/* ---------- Bộ lọc: Original / Document / B&W / Grayscale ---------- */
+function gridOp(g, gw, gh, op) {
+  const o = new Float32Array(g.length);
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+    let m = 0, c = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= gw || yy >= gh) continue;
+      const v = g[yy * gw + xx]; if (op === 'max') { if (v > m) m = v; } else { m += v; c++; }
+    }
+    o[y * gw + x] = op === 'max' ? m : m / c;
+  }
+  return o;
+}
+function applyFilter(d, W, H, mode) {
+  const n = W * H * 4;
+  if (mode === 'original') return;
+  if (mode === 'gray') { for (let i = 0; i < n; i += 4) { const l = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8; d[i] = d[i + 1] = d[i + 2] = l; } return; }
+  // Ước lượng nền giấy (ánh sáng không đều, bóng đổ) rồi chuẩn hoá
+  const bs = Math.max(8, Math.round(Math.min(W, H) / 36)), gw = Math.ceil(W / bs), gh = Math.ceil(H / bs);
+  let g = new Float32Array(gw * gh);
+  for (let by = 0; by < gh; by++) for (let bx = 0; bx < gw; bx++) {
+    let mx = 0; const x0 = bx * bs, y0 = by * bs, x1 = Math.min(W, x0 + bs), y1 = Math.min(H, y0 + bs);
+    for (let y = y0; y < y1; y += 2) { let i = (y * W + x0) * 4; for (let x = x0; x < x1; x += 2, i += 8) { const l = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8; if (l > mx) mx = l; } }
+    g[by * gw + bx] = mx;
+  }
+  g = gridOp(gridOp(gridOp(g, gw, gh, 'max'), gw, gh, 'mean'), gw, gh, 'mean');
+  const xi = new Int32Array(W), xf = new Float32Array(W);
+  for (let x = 0; x < W; x++) { let f = (x + 0.5) / bs - 0.5; f = Math.max(0, Math.min(gw - 1, f)); xi[x] = Math.min(gw - 2, f | 0); xf[x] = f - xi[x]; if (gw === 1) { xi[x] = 0; xf[x] = 0; } }
+  const bw = mode === 'bw', K = 255 / 220;
+  for (let y = 0; y < H; y++) {
+    let fy = (y + 0.5) / bs - 0.5; fy = Math.max(0, Math.min(gh - 1, fy));
+    let y0 = Math.min(gh - 2, fy | 0); if (gh === 1) y0 = 0; const ay = gh === 1 ? 0 : fy - y0, y1 = gh === 1 ? 0 : y0 + 1;
+    let i = y * W * 4;
+    for (let x = 0; x < W; x++, i += 4) {
+      const x0 = xi[x], ax = xf[x], x1 = gw === 1 ? 0 : x0 + 1;
+      const bg = (g[y0 * gw + x0] * (1 - ax) + g[y0 * gw + x1] * ax) * (1 - ay) + (g[y1 * gw + x0] * (1 - ax) + g[y1 * gw + x1] * ax) * ay;
+      const s = 255 / Math.max(bg, 60);
+      if (bw) {
+        const l = ((d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8) * s;
+        const v = (l - 150) * 5.6; d[i] = d[i + 1] = d[i + 2] = v;
+      } else {
+        d[i] = (d[i] * s - 35) * K; d[i + 1] = (d[i + 1] * s - 35) * K; d[i + 2] = (d[i + 2] * s - 35) * K;
+      }
+    }
+  }
+}
+
+/* ---------- Tạo PDF (không cần thư viện) ---------- */
+function jpegInfo(b) {
+  let i = 2;
+  while (i < b.length) {
+    if (b[i] !== 0xFF) { i++; continue; }
+    const m = b[i + 1];
+    if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC)
+      return { h: (b[i + 5] << 8) | b[i + 6], w: (b[i + 7] << 8) | b[i + 8], nc: b[i + 9] };
+    i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+  }
+  return null;
+}
+/** imgs: [Uint8Array jpeg]. Mỗi ảnh = 1 trang A4, tự xoay ngang/dọc, giữ tỉ lệ, không cắt. */
+function makePdf(imgs) {
+  const enc = new TextEncoder(), parts = [], offs = []; let len = 0;
+  const push = x => { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; };
+  const f = v => (Math.round(v * 100) / 100).toString();
+  const obj = (id, body) => { offs[id] = len; push(id + ' 0 obj\n'); body(); push('\nendobj\n'); };
+  push('%PDF-1.4\n'); push(new Uint8Array([37, 226, 227, 207, 211, 10]));
+  const n = imgs.length;
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push('<< /Type /Pages /Kids [' + imgs.map((_, i) => (3 + 3 * i) + ' 0 R').join(' ') + '] /Count ' + n + ' >>'));
+  imgs.forEach((bytes, i) => {
+    const info = jpegInfo(bytes) || { w: 100, h: 141, nc: 3 };
+    const land = info.w > info.h, PW = land ? 841.89 : 595.28, PH = land ? 595.28 : 841.89;
+    const sc = Math.min(PW / info.w, PH / info.h), dw = info.w * sc, dh = info.h * sc;
+    const pid = 3 + 3 * i, cid = pid + 1, iid = pid + 2;
+    obj(pid, () => push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + f(PW) + ' ' + f(PH) + '] /Resources << /XObject << /Im' + i + ' ' + iid + ' 0 R >> /ProcSet [/PDF /ImageC /ImageB] >> /Contents ' + cid + ' 0 R >>'));
+    const cs = 'q ' + f(dw) + ' 0 0 ' + f(dh) + ' ' + f((PW - dw) / 2) + ' ' + f((PH - dh) / 2) + ' cm /Im' + i + ' Do Q';
+    obj(cid, () => push('<< /Length ' + cs.length + ' >>\nstream\n' + cs + '\nendstream'));
+    obj(iid, () => {
+      push('<< /Type /XObject /Subtype /Image /Width ' + info.w + ' /Height ' + info.h + ' /ColorSpace /' + (info.nc === 1 ? 'DeviceGray' : 'DeviceRGB') +
+        ' /BitsPerComponent 8 /Filter /DCTDecode /Length ' + bytes.length + ' >>\nstream\n');
+      push(bytes); push('\nendstream');
+    });
+  });
+  const xref = len, total = 3 + 3 * n;
+  let x = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
+  for (let id = 1; id < total; id++) x += String(offs[id]).padStart(10, '0') + ' 00000 n \n';
+  push(x + 'trailer\n<< /Size ' + total + ' /Root 1 0 R /Info << /Producer (SCAN DOC) >> >>\nstartxref\n' + xref + '\n%%EOF\n');
+  return new Blob(parts, { type: 'application/pdf' });
+}
+/*CORE-END*/
+
+/* =====================================================================
+   GIAO DIỆN
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const S = {
+  name: null, pages: [], retake: -1,
+  cam: { stream: null, track: null, facing: 'environment', torch: false, auto: localStorage.getItem('sd_auto') !== '0', running: false, quad: null, shown: null, miss: 0, stableT: 0, lastCap: 0, busy: false, idle: 0 },
+  R: null, view: null, doc: null, last: null
+};
+const DEF_CORNERS = () => [[0.04, 0.04], [0.96, 0.04], [0.96, 0.96], [0.04, 0.96]];
+const pad = (n, l = 2) => String(n).padStart(l, '0');
+function stamp(d = new Date()) { return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()); }
+const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+const fmtDate = t => { const d = new Date(t); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function toast(m, ms = 2400) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), ms); }
+function busy(m) { if (m) { $('busyMsg').textContent = m; $('busy').classList.add('on'); } else $('busy').classList.remove('on'); }
+
+/* ---------- IndexedDB ---------- */
+const DB = {
+  p: null,
+  open() {
+    return this.p || (this.p = new Promise((res, rej) => {
+      const r = indexedDB.open('scandoc', 1);
+      r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('docs', { keyPath: 'id' }); d.createObjectStore('kv'); };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+  },
+  async run(store, mode, fn) {
+    const d = await this.open();
+    return new Promise((res, rej) => {
+      const t = d.transaction(store, mode), req = fn(t.objectStore(store));
+      t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    });
+  },
+  put(s, v, k) { return this.run(s, 'readwrite', o => k === undefined ? o.put(v) : o.put(v, k)); },
+  get(s, k) { return this.run(s, 'readonly', o => o.get(k)); },
+  all(s) { return this.run(s, 'readonly', o => o.getAll()); },
+  del(s, k) { return this.run(s, 'readwrite', o => o.delete(k)); }
+};
+
+/* ---------- Ảnh ---------- */
+async function loadBmp(blob) {
+  if (window.createImageBitmap) { try { return await createImageBitmap(blob, { imageOrientation: 'from-image' }); } catch (e) { try { return await createImageBitmap(blob); } catch (e2) {} } }
+  return new Promise((res, rej) => { const u = URL.createObjectURL(blob), im = new Image(); im.onload = () => { URL.revokeObjectURL(u); res(im); }; im.onerror = rej; im.src = u; });
+}
+const closeBmp = b => { try { b.close && b.close(); } catch (e) {} };
+function mkCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+const toBlob = (c, type = 'image/jpeg', q = 0.88) => new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('toBlob')), type, q));
+function detectOn(source, sw, sh, maxSide = 560) {
+  const s = Math.min(1, maxSide / Math.max(sw, sh)), w = Math.max(8, Math.round(sw * s)), h = Math.max(8, Math.round(sh * s));
+  const c = mkCanvas(w, h), x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(source, 0, 0, w, h);
+  try { return detectQuad(x.getImageData(0, 0, w, h).data, w, h); } catch (e) { console.warn(e); return null; }
+}
+/** Dựng ảnh kết quả của 1 trang (cắt + phối cảnh + bộ lọc + xoay). cache dùng lại phần warp khi chỉ đổi bộ lọc */
+async function renderPage(p, cache) {
+  const key = JSON.stringify([p.corners, p.ratio]);
+  let wp = cache && cache.key === key ? cache.img : null;
+  if (!wp) {
+    const bmp = await loadBmp(p.src);
+    const c = mkCanvas(bmp.width, bmp.height), x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(bmp, 0, 0); closeBmp(bmp);
+    const src = x.getImageData(0, 0, c.width, c.height);
+    const dm = outDims(p.corners, c.width, c.height, p.ratio);
+    wp = warp(src, p.corners, dm.w, dm.h);
+    if (cache) { cache.key = key; cache.img = wp; }
+  }
+  const data = new Uint8ClampedArray(wp.data);
+  applyFilter(data, wp.width, wp.height, p.filter);
+  let c = mkCanvas(wp.width, wp.height);
+  c.getContext('2d').putImageData(new ImageData(data, wp.width, wp.height), 0, 0);
+  const rot = ((p.rot || 0) % 360 + 360) % 360;
+  if (rot) {
+    const r = rot === 180 ? mkCanvas(c.width, c.height) : mkCanvas(c.height, c.width), x = r.getContext('2d');
+    x.translate(r.width / 2, r.height / 2); x.rotate(rot * Math.PI / 180); x.drawImage(c, -c.width / 2, -c.height / 2); c = r;
+  }
+  const out = await toBlob(c, 'image/jpeg', 0.86);
+  const ts = Math.min(1, 300 / Math.max(c.width, c.height)), t = mkCanvas(Math.round(c.width * ts), Math.round(c.height * ts));
+  t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+  const thumb = await toBlob(t, 'image/jpeg', 0.75);
+  return { out, thumb, w: c.width, h: c.height };
+}
+async function fileToSrc(file) {
+  const bmp = await loadBmp(file);
+  const s = Math.min(1, 2400 / Math.max(bmp.width, bmp.height)), w = Math.round(bmp.width * s), h = Math.round(bmp.height * s);
+  const c = mkCanvas(w, h); c.getContext('2d').drawImage(bmp, 0, 0, w, h); closeBmp(bmp);
+  const corners = detectOn(c, w, h);
+  return { src: await toBlob(c, 'image/jpeg', 0.92), sw: w, sh: h, corners: corners || [[0, 0], [1, 0], [1, 1], [0, 1]], found: !!corners };
+}
+function newPage(o) { return { id: Date.now() + '_' + Math.random().toString(36).slice(2, 7), filter: 'document', ratio: 'a4', rot: 0, ...o }; }
+function setPageResult(p, r) {
+  if (p.thumbUrl) URL.revokeObjectURL(p.thumbUrl);
+  p.out = r.out; p.thumb = r.thumb; p.w = r.w; p.h = r.h; p.thumbUrl = URL.createObjectURL(r.thumb);
+}
+
+/* ---------- Phiên làm việc (tự lưu để không mất trang) ---------- */
+let saveT = 0;
+function saveSession() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    const pages = S.pages.map(p => ({ id: p.id, src: p.src, sw: p.sw, sh: p.sh, corners: p.corners, filter: p.filter, ratio: p.ratio, rot: p.rot, out: p.out, thumb: p.thumb, w: p.w, h: p.h }));
+    DB.put('kv', { name: S.name, pages }, 'session').catch(e => console.warn(e));
+  }, 250);
+}
+function ensureSession() { if (!S.pages.length || !S.name) S.name = 'SCAN_' + stamp(); }
+function clearSession() { S.pages.forEach(p => p.thumbUrl && URL.revokeObjectURL(p.thumbUrl)); S.pages = []; S.name = null; DB.del('kv', 'session').catch(() => {}); }
+
+/* ---------- Điều hướng ---------- */
+let cur = 'home';
+function go(id) {
+  document.querySelectorAll('.screen.active').forEach(s => s.classList.remove('active'));
+  $('s-' + id).classList.add('active'); cur = id; closeSheet();
+  if (id !== 'camera') { S.cam.running = false; scheduleCamStop(); }
+  if (id === 'home') renderHome();
+}
+function back() {
+  switch (cur) {
+    case 'camera': leaveCamera(); break;
+    case 'review': reviewBack(); break;
+    case 'crop': go('review'); break;
+    case 'pages': go('home'); break;
+    case 'viewer': go(S.view && S.view.from || 'pages'); break;
+    case 'done': go('home'); break;
+    case 'lib': go('home'); break;
+    case 'doc': openLib(); break;
+    default: return false;
+  }
+  return true;
+}
+history.replaceState({ sd: 1 }, ''); history.pushState({ sd: 2 }, '');
+addEventListener('popstate', () => { if ($('sheet').classList.contains('on')) closeSheet(); else if (cur === 'home') { history.back(); return; } else back(); history.pushState({ sd: 2 }, ''); });
+
+/* ---------- Trang chủ / thư viện ---------- */
+let libUrls = [];
+function docRow(d) {
+  const u = URL.createObjectURL(d.thumb); libUrls.push(u);
+  const el = document.createElement('div'); el.className = 'doc';
+  el.innerHTML = '<img src="' + u + '" alt=""><div class="meta"><b></b><span>' + d.count + ' trang · ' + fmtSize(d.pdf.size) + ' · ' + fmtDate(d.created) + '</span></div><button class="ib" data-s title="Chia sẻ">↗</button>';
+  el.querySelector('b').textContent = d.name + '.pdf';
+  el.onclick = e => { if (e.target.closest('[data-s]')) shareDoc(d); else openDoc(d); };
+  return el;
+}
+async function loadDocs() { try { return (await DB.all('docs')).sort((a, b) => b.created - a.created); } catch (e) { return []; } }
+async function renderHome() {
+  libUrls.forEach(u => URL.revokeObjectURL(u)); libUrls = [];
+  const docs = await loadDocs(), box = $('recent'); box.innerHTML = '';
+  if (!docs.length) box.innerHTML = '<div class="empty">Chưa có tài liệu nào.<br>Bấm <b>CHỤP TÀI LIỆU</b> để bắt đầu.</div>';
+  docs.slice(0, 5).forEach(d => box.appendChild(docRow(d)));
+  $('resume').hidden = !S.pages.length; $('resumeN').textContent = S.pages.length;
+}
+async function openLib() {
+  go('lib'); const docs = await loadDocs(), box = $('libList'); box.innerHTML = '';
+  if (!docs.length) box.innerHTML = '<div class="empty">Chưa có tài liệu nào được lưu.</div>';
+  docs.forEach(d => box.appendChild(docRow(d)));
+}
+let docUrls = [];
+function openDoc(d) {
+  S.doc = d; go('doc');
+  $('docName').textContent = d.name + '.pdf';
+  $('docInfo').textContent = d.count + ' trang · ' + fmtSize(d.pdf.size) + ' · ' + fmtDate(d.created);
+  docUrls.forEach(u => URL.revokeObjectURL(u)); docUrls = d.images.map(b => URL.createObjectURL(b));
+  const g = $('docGrid'); g.innerHTML = '';
+  docUrls.forEach((u, i) => { const t = document.createElement('div'); t.className = 'thumb'; t.innerHTML = '<img src="' + u + '"><span class="no">' + (i + 1) + '</span>'; t.onclick = () => openViewer(docUrls, i, 'doc'); g.appendChild(t); });
+}
+
+/* ---------- Lưu & chia sẻ ---------- */
+function download(blob, name) {
+  const u = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 15000);
+}
+async function shareFiles(files, title) {
+  try {
+    if (navigator.canShare && navigator.canShare({ files })) { await navigator.share({ files, title }); return; }
+  } catch (e) { if (e.name === 'AbortError') return; console.warn(e); }
+  toast('Thiết bị không hỗ trợ chia sẻ file – đã tải file xuống máy', 3200);
+  files.forEach(f => download(f, f.name));
+}
+const pdfFile = d => new File([d.pdf], d.name + '.pdf', { type: 'application/pdf' });
+function shareDoc(d) { shareFiles([pdfFile(d)], d.name); }
+async function saveJpgs(blobs, name) {
+  for (let i = 0; i < blobs.length; i++) { download(blobs[i], name + '_' + pad(i + 1) + '.jpg'); await sleep(350); }
+  toast('Đã lưu ' + blobs.length + ' ảnh JPG vào thư mục Tải xuống');
+}
+
+/* ---------- Camera ---------- */
+const video = $('video'), ov = $('overlay');
+async function openCamera() {
+  ensureSession(); go('camera'); updateCamSide();
+  $('camAuto').classList.toggle('on', S.cam.auto);
+  clearTimeout(S.cam.idle);
+  if (S.cam.stream && S.cam.track && S.cam.track.readyState === 'live') { startLoop(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return camError('Trình duyệt không cho mở camera trực tiếp (cần HTTPS). Bạn vẫn có thể chụp bằng camera của máy.');
+  try { await startStream(); } catch (e) {
+    console.warn(e);
+    camError(e && e.name === 'NotAllowedError' ? 'Bạn chưa cho phép dùng camera. Hãy cấp quyền Camera cho trang này, hoặc chụp bằng camera của máy.' : 'Không mở được camera trực tiếp. Bạn có thể chụp bằng camera của máy.');
+  }
+}
+function camError(msg) { $('camErr').hidden = false; $('camErrMsg').textContent = msg; $('camStatus').hidden = true; }
+async function startStream() {
+  stopStream(); $('camErr').hidden = true; $('camStatus').hidden = false; setStatus('Đang mở camera…');
+  const st = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: S.cam.facing }, width: { ideal: 2560 }, height: { ideal: 1920 } } });
+  S.cam.stream = st; S.cam.track = st.getVideoTracks()[0]; S.cam.torch = false;
+  video.srcObject = st; try { await video.play(); } catch (e) {}
+  const caps = (S.cam.track.getCapabilities && S.cam.track.getCapabilities()) || {};
+  $('camFlash').hidden = !caps.torch; $('camFlash').classList.remove('on');
+  try { const devs = await navigator.mediaDevices.enumerateDevices(); $('camSwitch').hidden = devs.filter(d => d.kind === 'videoinput').length < 2; } catch (e) {}
+  if (cur === 'camera') startLoop(); else scheduleCamStop();
+}
+function stopStream() { if (S.cam.stream) S.cam.stream.getTracks().forEach(t => t.stop()); S.cam.stream = null; S.cam.track = null; video.srcObject = null; }
+function scheduleCamStop() { clearTimeout(S.cam.idle); if (S.cam.stream) S.cam.idle = setTimeout(() => { if (cur !== 'camera' && cur !== 'review') stopStream(); }, cur === 'review' ? 120000 : 25000); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) { stopStream(); S.cam.running = false; } else if (cur === 'camera' && !S.cam.stream && $('camErr').hidden) startStream().catch(() => {}); });
+function setStatus(t, found) { const s = $('camStatus'); s.textContent = t; s.classList.toggle('found', !!found); }
+function leaveCamera() { S.cam.running = false; stopStream(); S.retake = -1; go(S.pages.length ? 'pages' : 'home'); }
+function updateCamSide() {
+  const n = S.pages.length, b = $('camDone');
+  $('camCnt').hidden = !n; $('camCnt').textContent = n;
+  const old = b.querySelector('img'); if (old) old.remove();
+  if (n && S.pages[n - 1].thumbUrl) { const im = document.createElement('img'); im.src = S.pages[n - 1].thumbUrl; b.prepend(im); }
+  $('camDoneLbl').textContent = n ? 'Xong' : '';
+}
+const lc = mkCanvas(8, 8), lx = lc.getContext('2d', { willReadFrequently: true });
+function startLoop() { if (S.cam.running) return; S.cam.running = true; S.cam.quad = null; S.cam.shown = null; S.cam.stableT = 0; loop(); }
+function loop() {
+  if (!S.cam.running) return;
+  const t0 = performance.now();
+  if (video.readyState >= 2 && video.videoWidth) {
+    const vw = video.videoWidth, vh = video.videoHeight, s = 320 / Math.max(vw, vh), w = Math.round(vw * s), h = Math.round(vh * s);
+    if (lc.width !== w || lc.height !== h) { lc.width = w; lc.height = h; }
+    lx.drawImage(video, 0, 0, w, h);
+    let q = null; try { q = detectQuad(lx.getImageData(0, 0, w, h).data, w, h); } catch (e) {}
+    onDetect(q);
+  }
+  const dt = performance.now() - t0;
+  setTimeout(loop, Math.max(40, 110 - dt));
+}
+function onDetect(q) {
+  const c = S.cam, now = performance.now();
+  if (q) {
+    c.miss = 0;
+    const move = c.quad ? Math.max(...q.map((p, i) => Math.hypot(p[0] - c.quad[i][0], p[1] - c.quad[i][1]))) : 1;
+    if (move > 0.025 || !c.stableT) c.stableT = now;
+    c.quad = q;
+    c.shown = c.shown ? c.shown.map((p, i) => [p[0] + (q[i][0] - p[0]) * 0.55, p[1] + (q[i][1] - p[1]) * 0.55]) : q;
+  } else if (++c.miss > 3) { c.quad = null; c.shown = null; c.stableT = 0; }
+  let prog = 0;
+  if (c.quad && c.auto) prog = Math.min(1, (now - c.stableT) / 1300);
+  $('shutter').style.setProperty('--p', (prog * 360) + 'deg');
+  if (!c.quad) setStatus('Đưa toàn bộ tài liệu vào khung hình');
+  else if (c.auto && prog > 0.15) setStatus('Đã nhận diện tài liệu – giữ yên máy…', true);
+  else setStatus('Đã nhận diện tài liệu', true);
+  drawOverlay();
+  if (c.auto && prog >= 1 && now - c.lastCap > 2500 && !c.busy) capture();
+}
+function drawOverlay() {
+  const dpr = devicePixelRatio || 1, cw = ov.clientWidth, ch = ov.clientHeight;
+  if (ov.width !== Math.round(cw * dpr) || ov.height !== Math.round(ch * dpr)) { ov.width = Math.round(cw * dpr); ov.height = Math.round(ch * dpr); }
+  const x = ov.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, cw, ch);
+  const q = S.cam.shown; if (!q || !video.videoWidth) return;
+  const vw = video.videoWidth, vh = video.videoHeight, s = Math.min(cw / vw, ch / vh), dx = (cw - vw * s) / 2, dy = (ch - vh * s) / 2;
+  const P = q.map(([a, b]) => [dx + a * vw * s, dy + b * vh * s]);
+  x.beginPath(); P.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath();
+  x.fillStyle = 'rgba(59,130,246,.22)'; x.fill(); x.lineWidth = 3; x.strokeStyle = '#3b82f6'; x.lineJoin = 'round'; x.stroke();
+  P.forEach(p => { x.beginPath(); x.arc(p[0], p[1], 9, 0, 7); x.fillStyle = '#fff'; x.fill(); x.lineWidth = 4; x.strokeStyle = '#2563eb'; x.stroke(); });
+}
+async function capture() {
+  const c = S.cam; if (c.busy) return;
+  if (!video.videoWidth) { $('fileCapture').click(); return; }
+  c.busy = true; c.lastCap = performance.now(); c.running = false;
+  const fx = $('flashFx'); fx.style.transition = 'none'; fx.style.opacity = '.85'; requestAnimationFrame(() => { fx.style.transition = 'opacity .3s'; fx.style.opacity = '0'; });
+  try { navigator.vibrate && navigator.vibrate(30); } catch (e) {}
+  try {
+    const vw = video.videoWidth, vh = video.videoHeight, cv = mkCanvas(vw, vh);
+    cv.getContext('2d').drawImage(video, 0, 0, vw, vh);
+    const corners = detectOn(cv, vw, vh) || (c.quad && c.quad.map(p => p.slice())) || DEF_CORNERS();
+    const src = await toBlob(cv, 'image/jpeg', 0.92);
+    openReview(newPage({ src, sw: vw, sh: vh, corners }), S.retake >= 0 ? 'retake' : 'new', S.retake);
+  } catch (e) { console.error(e); toast('Chụp không thành công, thử lại'); startLoop(); }
+  c.busy = false;
+}
+
+/* ---------- Xem lại & bộ lọc ---------- */
+let revUrl = null, revTok = 0;
+function openReview(page, mode, index) {
+  S.R = { page: { ...page, corners: page.corners.map(p => p.slice()) }, mode, index, cache: {}, result: null, job: null };
+  $('revTitle').textContent = mode === 'new' ? 'Trang ' + (S.pages.length + 1) : 'Trang ' + (index + 1);
+  $('revRetake').textContent = 'Chụp lại';
+  go('review'); syncChips(); renderReview();
+}
+function syncChips() {
+  const p = S.R.page;
+  document.querySelectorAll('#filterChips .chip').forEach(c => c.classList.toggle('on', c.dataset.f === p.filter));
+  document.querySelectorAll('#ratioChips .chip').forEach(c => c.classList.toggle('on', c.dataset.r === p.ratio));
+}
+function renderReview() {
+  const R = S.R, tok = ++revTok; $('revSpin').hidden = false; R.result = null;
+  R.job = (async () => {
+    await sleep(16);
+    const r = await renderPage(R.page, R.cache);
+    if (tok !== revTok) return r;
+    if (revUrl) URL.revokeObjectURL(revUrl); revUrl = URL.createObjectURL(r.out);
+    $('revImg').src = revUrl; $('revSpin').hidden = true; R.result = r; return r;
+  })();
+  R.job.catch(e => { console.error(e); $('revSpin').hidden = true; toast('Lỗi xử lý ảnh'); });
+}
+function reviewBack() { const R = S.R; if (R && R.mode === 'edit') go('pages'); else openCamera(); }
+$('filterChips').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; S.R.page.filter = c.dataset.f; syncChips(); renderReview(); };
+$('ratioChips').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; S.R.page.ratio = c.dataset.r; syncChips(); renderReview(); };
+$('revRotate').onclick = () => { S.R.page.rot = ((S.R.page.rot || 0) + 90) % 360; renderReview(); };
+$('revCrop').onclick = () => openCrop();
+$('revBack').onclick = () => reviewBack();
+$('revRetake').onclick = () => { const R = S.R; S.retake = R.mode === 'new' ? -1 : R.index; openCamera(); };
+$('revUse').onclick = async () => {
+  const R = S.R; let r = R.result;
+  if (!r) { busy('Đang xử lý…'); try { r = await R.job; } catch (e) { busy(); return; } busy(); }
+  if (!r) return;
+  const p = R.page; setPageResult(p, r);
+  if (R.mode === 'new') S.pages.push(p);
+  else { const old = S.pages[R.index]; if (old && old.thumbUrl && old !== p) URL.revokeObjectURL(old.thumbUrl); S.pages[R.index] = p; }
+  S.retake = -1; saveSession();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  openPages();
+};
+
+/* ---------- Chỉnh 4 góc thủ công ---------- */
+const cc = $('cropCanvas'), loupe = $('loupe');
+const CR = { bmp: null, pts: null, drag: -1, rect: null };
+async function openCrop() {
+  busy('Đang mở ảnh…');
+  try { CR.bmp = await loadBmp(S.R.page.src); } catch (e) { busy(); toast('Không mở được ảnh'); return; }
+  busy(); CR.pts = S.R.page.corners.map(p => p.slice()); go('crop'); requestAnimationFrame(drawCrop);
+}
+function cropLayout() {
+  const dpr = devicePixelRatio || 1, cw = cc.clientWidth, ch = cc.clientHeight;
+  if (cc.width !== Math.round(cw * dpr) || cc.height !== Math.round(ch * dpr)) { cc.width = Math.round(cw * dpr); cc.height = Math.round(ch * dpr); }
+  const m = 26, iw = CR.bmp.width, ih = CR.bmp.height, s = Math.min((cw - 2 * m) / iw, (ch - 2 * m) / ih);
+  CR.rect = { x: (cw - iw * s) / 2, y: (ch - ih * s) / 2, w: iw * s, h: ih * s, dpr };
+}
+function drawCrop() {
+  if (!CR.bmp) return; cropLayout();
+  const r = CR.rect, x = cc.getContext('2d');
+  x.setTransform(r.dpr, 0, 0, r.dpr, 0, 0); x.clearRect(0, 0, cc.width, cc.height);
+  x.drawImage(CR.bmp, r.x, r.y, r.w, r.h);
+  const P = CR.pts.map(([a, b]) => [r.x + a * r.w, r.y + b * r.h]);
+  x.save(); x.beginPath(); x.rect(r.x, r.y, r.w, r.h); P.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath();
+  x.fillStyle = 'rgba(0,0,0,.45)'; x.fill('evenodd'); x.restore();
+  x.beginPath(); P.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath();
+  x.lineWidth = 2.5; x.strokeStyle = '#3b82f6'; x.stroke();
+  P.forEach((p, i) => { x.beginPath(); x.arc(p[0], p[1], CR.drag === i ? 15 : 12, 0, 7); x.fillStyle = 'rgba(59,130,246,.35)'; x.fill(); x.lineWidth = 3; x.strokeStyle = '#fff'; x.stroke(); x.beginPath(); x.arc(p[0], p[1], 3.5, 0, 7); x.fillStyle = '#fff'; x.fill(); });
+}
+function cropPt(e) { const b = cc.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; }
+cc.addEventListener('pointerdown', e => {
+  if (!CR.rect) return; const [px, py] = cropPt(e), r = CR.rect;
+  let best = -1, bd = 70;
+  CR.pts.forEach(([a, b], i) => { const d = Math.hypot(r.x + a * r.w - px, r.y + b * r.h - py); if (d < bd) { bd = d; best = i; } });
+  if (best < 0) return;
+  CR.drag = best; CR.off = [r.x + CR.pts[best][0] * r.w - px, r.y + CR.pts[best][1] * r.h - py];
+  cc.setPointerCapture(e.pointerId); moveCorner(px, py);
+});
+cc.addEventListener('pointermove', e => { if (CR.drag < 0) return; const [px, py] = cropPt(e); moveCorner(px, py); });
+const endDrag = () => { CR.drag = -1; loupe.style.display = 'none'; drawCrop(); };
+cc.addEventListener('pointerup', endDrag); cc.addEventListener('pointercancel', endDrag);
+function moveCorner(px, py) {
+  const r = CR.rect, X = px + CR.off[0], Y = py + CR.off[1];
+  CR.pts[CR.drag] = [Math.min(1, Math.max(0, (X - r.x) / r.w)), Math.min(1, Math.max(0, (Y - r.y) / r.h))];
+  drawCrop();
+  // kính lúp
+  const [nx, ny] = CR.pts[CR.drag], lx2 = loupe.getContext('2d'), L = 240, z = 3 * (r.dpr || 1) / 2;
+  const sx = nx * CR.bmp.width, sy = ny * CR.bmp.height, half = L / 2 / (z * r.w / CR.bmp.width);
+  lx2.fillStyle = '#000'; lx2.fillRect(0, 0, L, L);
+  lx2.drawImage(CR.bmp, sx - half, sy - half, half * 2, half * 2, 0, 0, L, L);
+  lx2.strokeStyle = '#3b82f6'; lx2.lineWidth = 3; lx2.beginPath(); lx2.moveTo(L / 2 - 18, L / 2); lx2.lineTo(L / 2 + 18, L / 2); lx2.moveTo(L / 2, L / 2 - 18); lx2.lineTo(L / 2, L / 2 + 18); lx2.stroke();
+  loupe.style.display = 'block';
+  const leftSide = (r.x + nx * r.w) > cc.clientWidth / 2;
+  loupe.style.left = leftSide ? '10px' : ''; loupe.style.right = leftSide ? '' : '10px';
+  loupe.style.left = leftSide ? '10px' : 'auto'; loupe.style.right = leftSide ? 'auto' : '10px';
+}
+addEventListener('resize', () => { if (cur === 'crop') drawCrop(); });
+const cropClose = () => { if (CR.bmp) closeBmp(CR.bmp); CR.bmp = null; };
+$('cropCancel').onclick = $('cropCancel2').onclick = () => { cropClose(); go('review'); };
+$('cropFull').onclick = () => { CR.pts = [[0, 0], [1, 0], [1, 1], [0, 1]]; drawCrop(); };
+$('cropAuto').onclick = () => { const q = detectOn(CR.bmp, CR.bmp.width, CR.bmp.height, 720); if (q) { CR.pts = q; drawCrop(); toast('Đã nhận diện tài liệu'); } else toast('Không tìm thấy viền giấy – hãy kéo góc thủ công'); };
+$('cropOk').onclick = () => {
+  const q = CR.pts; if (polyArea(q) < 0.01) { toast('Vùng chọn quá nhỏ'); return; }
+  S.R.page.corners = orderCorners(q.map(p => p.slice())); cropClose(); go('review'); renderReview();
+};
+
+/* ---------- Quản lý trang ---------- */
+function openPages() { if (!S.pages.length) { go('home'); return; } go('pages'); renderGrid(); }
+function renderGrid(dragIdx = -1) {
+  const g = $('pageGrid'); g.innerHTML = '';
+  $('pagesName').textContent = S.name + ' · ' + S.pages.length + ' trang';
+  S.pages.forEach((p, i) => {
+    const t = document.createElement('div'); t.className = 'thumb' + (i === dragIdx ? ' drag' : ''); t.dataset.i = i;
+    t.innerHTML = '<img src="' + p.thumbUrl + '" alt=""><span class="no">' + (i + 1) + '</span>'; g.appendChild(t);
+  });
+  const add = document.createElement('button'); add.className = 'addtile'; add.innerHTML = '<i>＋</i>Chụp trang tiếp theo'; add.onclick = () => openCamera(); g.appendChild(add);
+  $('pagesPdf').textContent = 'TẠO PDF (' + S.pages.length + ' trang)';
+}
+// Kéo thả sắp xếp: giữ ~0,35s rồi kéo
+const DG = { t: 0, i: -1, on: false, ghost: null, sx: 0, sy: 0 };
+const grid = $('pageGrid');
+grid.addEventListener('contextmenu', e => e.preventDefault());
+grid.addEventListener('pointerdown', e => {
+  const t = e.target.closest('.thumb'); if (!t) return;
+  DG.i = +t.dataset.i; DG.sx = e.clientX; DG.sy = e.clientY; DG.on = false; DG.moved = false;
+  clearTimeout(DG.t);
+  DG.t = setTimeout(() => {
+    DG.on = true; try { navigator.vibrate && navigator.vibrate(25); } catch (er) {}
+    const r = t.getBoundingClientRect(); DG.ghost = t.cloneNode(true); DG.ghost.classList.add('dragghost');
+    DG.ghost.style.width = r.width + 'px'; DG.ghost.style.height = r.height + 'px'; DG.ghost.style.left = DG.sx + 'px'; DG.ghost.style.top = DG.sy + 'px';
+    document.body.appendChild(DG.ghost); renderGrid(DG.i);
+  }, 350);
+});
+grid.addEventListener('touchmove', e => { if (DG.on) e.preventDefault(); }, { passive: false });
+addEventListener('pointermove', e => {
+  if (DG.i < 0) return;
+  if (!DG.on) { if (Math.hypot(e.clientX - DG.sx, e.clientY - DG.sy) > 10) { DG.moved = true; clearTimeout(DG.t); } return; }
+  DG.ghost.style.left = e.clientX + 'px'; DG.ghost.style.top = e.clientY + 'px';
+  const el = document.elementFromPoint(e.clientX, e.clientY), t = el && el.closest && el.closest('#pageGrid .thumb');
+  if (t) { const ti = +t.dataset.i; if (ti !== DG.i) { const [p] = S.pages.splice(DG.i, 1); S.pages.splice(ti, 0, p); DG.i = ti; renderGrid(DG.i); } }
+});
+function endGridPointer(e, cancel) {
+  if (DG.i < 0) return; clearTimeout(DG.t);
+  if (DG.on) { DG.ghost && DG.ghost.remove(); DG.ghost = null; DG.on = false; renderGrid(); saveSession(); }
+  else if (!cancel && !DG.moved && e.target.closest && e.target.closest('#pageGrid .thumb')) openSheet(DG.i);
+  DG.i = -1;
+}
+addEventListener('pointerup', e => endGridPointer(e, false));
+addEventListener('pointercancel', e => endGridPointer(e, true));
+
+let sheetIdx = -1;
+function openSheet(i) { sheetIdx = i; $('sheetTitle').textContent = 'Trang ' + (i + 1) + ' / ' + S.pages.length; $('mask').classList.add('on'); $('sheet').classList.add('on'); }
+function closeSheet() { $('mask').classList.remove('on'); $('sheet').classList.remove('on'); }
+$('mask').onclick = closeSheet;
+$('sheet').onclick = async e => {
+  const b = e.target.closest('.act'); if (!b) return; const a = b.dataset.a, i = sheetIdx, p = S.pages[i]; if (!p) return;
+  closeSheet();
+  if (a === 'view') openViewer(S.pages.map(x => x.thumbUrl), i, 'pages', true);
+  else if (a === 'edit') openReview(p, 'edit', i);
+  else if (a === 'retake') { S.retake = i; openCamera(); }
+  else if (a === 'rotate') { busy('Đang xoay…'); try { p.rot = ((p.rot || 0) + 90) % 360; setPageResult(p, await renderPage(p)); saveSession(); renderGrid(); } finally { busy(); } }
+  else if (a === 'left' && i > 0) { [S.pages[i - 1], S.pages[i]] = [S.pages[i], S.pages[i - 1]]; saveSession(); renderGrid(); }
+  else if (a === 'right' && i < S.pages.length - 1) { [S.pages[i + 1], S.pages[i]] = [S.pages[i], S.pages[i + 1]]; saveSession(); renderGrid(); }
+  else if (a === 'delete') {
+    if (!confirm('Xóa trang ' + (i + 1) + '?')) return;
+    const [d] = S.pages.splice(i, 1); d.thumbUrl && URL.revokeObjectURL(d.thumbUrl); saveSession();
+    if (S.pages.length) renderGrid(); else { clearSession(); go('home'); }
+  }
+};
+
+/* ---------- Xem trang ---------- */
+function openViewer(urls, i, from, sessionPages) { S.view = { urls, i, from, sessionPages }; go('viewer'); showView(); }
+let viewUrl = null;
+function showView() {
+  const v = S.view; v.i = Math.max(0, Math.min(v.urls.length - 1, v.i));
+  if (viewUrl) { URL.revokeObjectURL(viewUrl); viewUrl = null; }
+  if (v.sessionPages) { viewUrl = URL.createObjectURL(S.pages[v.i].out); $('viewImg').src = viewUrl; } else $('viewImg').src = v.urls[v.i];
+  $('viewTitle').textContent = 'Trang ' + (v.i + 1); $('viewCount').textContent = (v.i + 1) + ' / ' + v.urls.length;
+}
+$('viewPrev').onclick = () => { S.view.i--; showView(); };
+$('viewNext').onclick = () => { S.view.i++; showView(); };
+$('viewBack').onclick = () => back();
+(() => { let sx = 0; const st = $('s-viewer'); st.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true }); st.addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 60) { S.view.i += dx < 0 ? 1 : -1; showView(); } }); })();
+
+/* ---------- Nhập ảnh từ thư viện ---------- */
+async function importFiles(files) {
+  files = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name)); if (!files.length) return;
+  ensureSession(); let nf = 0;
+  for (let k = 0; k < files.length; k++) {
+    busy('Đang xử lý ảnh ' + (k + 1) + '/' + files.length + '…');
+    try { const s = await fileToSrc(files[k]); if (!s.found) nf++; const p = newPage({ src: s.src, sw: s.sw, sh: s.sh, corners: s.corners }); setPageResult(p, await renderPage(p)); S.pages.push(p); }
+    catch (e) { console.error(e); toast('Không đọc được ảnh: ' + files[k].name); }
+  }
+  busy(); saveSession(); openPages();
+  if (nf) toast(nf + ' ảnh không thấy viền giấy – giữ nguyên khung. Chạm vào trang để chỉnh 4 góc.', 3800);
+}
+$('fileImport').onchange = e => { const f = e.target.files; importFiles(f).finally(() => { e.target.value = ''; }); };
+$('fileCapture').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  busy('Đang xử lý ảnh…');
+  try { const s = await fileToSrc(f); busy(); ensureSession(); openReview(newPage({ src: s.src, sw: s.sw, sh: s.sh, corners: s.corners }), S.retake >= 0 ? 'retake' : 'new', S.retake); }
+  catch (er) { busy(); toast('Không đọc được ảnh'); }
+};
+
+/* ---------- Tạo PDF ---------- */
+async function createPdf() {
+  if (!S.pages.length) return;
+  busy('Đang tạo PDF ' + S.pages.length + ' trang…');
+  try {
+    await sleep(30);
+    const imgs = []; for (const p of S.pages) imgs.push(new Uint8Array(await p.out.arrayBuffer()));
+    const pdf = makePdf(imgs);
+    const doc = { id: Date.now(), name: S.name, created: Date.now(), count: S.pages.length, pdf, images: S.pages.map(p => p.out), thumb: S.pages[0].thumb };
+    try { await DB.put('docs', doc); } catch (e) { console.warn(e); toast('Không lưu được vào bộ nhớ app (bộ nhớ đầy?) – hãy bấm LƯU VÀO MÁY', 4000); }
+    S.last = doc; clearSession();
+    $('doneName').textContent = doc.name + '.pdf';
+    $('doneInfo').textContent = doc.count + ' trang · ' + fmtSize(pdf.size) + ' · khổ A4';
+    busy(); go('done');
+  } catch (e) { console.error(e); busy(); toast('Tạo PDF thất bại: ' + e.message); }
+}
+
+/* ---------- Gắn sự kiện ---------- */
+$('btnScan').onclick = () => openCamera();
+$('btnResume').onclick = () => openPages();
+$('btnDiscard').onclick = () => { if (confirm('Bỏ tài liệu đang scan dở?')) { clearSession(); renderHome(); } };
+$('btnLib').onclick = () => openLib();
+$('btnMakePdf').onclick = () => $('fileImport').click();
+$('camClose').onclick = () => leaveCamera();
+$('shutter').onclick = () => capture();
+$('camGallery').onclick = () => $('fileImport').click();
+$('camSys').onclick = () => $('fileCapture').click();
+$('camDone').onclick = () => { if (S.pages.length) { S.cam.running = false; S.retake = -1; openPages(); } else toast('Chưa có trang nào'); };
+$('camAuto').onclick = () => { S.cam.auto = !S.cam.auto; localStorage.setItem('sd_auto', S.cam.auto ? '1' : '0'); $('camAuto').classList.toggle('on', S.cam.auto); S.cam.stableT = performance.now(); toast(S.cam.auto ? 'AUTO: tự chụp khi giữ yên máy' : 'Chụp thủ công'); };
+$('camFlash').onclick = async () => { const t = S.cam.track; if (!t) return; try { await t.applyConstraints({ advanced: [{ torch: !S.cam.torch }] }); S.cam.torch = !S.cam.torch; $('camFlash').classList.toggle('on', S.cam.torch); } catch (e) { toast('Không bật được flash'); } };
+$('camSwitch').onclick = async () => { S.cam.facing = S.cam.facing === 'environment' ? 'user' : 'environment'; S.cam.running = false; try { await startStream(); } catch (e) { toast('Không đổi được camera'); } };
+$('pagesBack').onclick = () => go('home');
+$('pagesNext').onclick = () => { S.retake = -1; openCamera(); };
+$('pagesImport').onclick = () => $('fileImport').click();
+$('pagesJpg').onclick = () => saveJpgs(S.pages.map(p => p.out), S.name);
+$('pagesPdf').onclick = () => createPdf();
+$('doneSave').onclick = () => { download(S.last.pdf, S.last.name + '.pdf'); toast('Đã lưu vào thư mục Tải xuống (Download)'); };
+$('doneShare').onclick = () => shareDoc(S.last);
+$('doneJpg').onclick = () => saveJpgs(S.last.images, S.last.name);
+$('doneNew').onclick = () => openCamera();
+$('doneHome').onclick = () => go('home');
+$('libBack').onclick = () => go('home');
+$('docBack').onclick = () => openLib();
+$('docSave').onclick = () => { download(S.doc.pdf, S.doc.name + '.pdf'); toast('Đã lưu vào thư mục Tải xuống (Download)'); };
+$('docShare').onclick = () => shareDoc(S.doc);
+$('docJpg').onclick = () => saveJpgs(S.doc.images, S.doc.name);
+$('docDel').onclick = async () => { if (!confirm('Xóa tài liệu ' + S.doc.name + '?')) return; await DB.del('docs', S.doc.id); toast('Đã xóa'); openLib(); };
+
+/* ---------- Khởi động ---------- */
+(async () => {
+  try {
+    const ss = await DB.get('kv', 'session');
+    if (ss && ss.pages && ss.pages.length) {
+      S.name = ss.name; S.pages = ss.pages.map(p => ({ ...p, thumbUrl: URL.createObjectURL(p.thumb) }));
+    }
+  } catch (e) { console.warn(e); }
+  renderHome();
+})();
+if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window.self) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW', e)));
+}
+</script>
+</body>
+</html>
